@@ -1,19 +1,19 @@
 ---
 import "../css/style.css"
 ---
+
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>speech to text</title>
+    <title>Speech to Text</title>
   </head>
-
   <body>
     <div class="container">
       <h1>Speech → Text</h1>
-      <p class="note">Runs fully in-browser using Whisper. Model downloads once and is cached.</p>
+      <p class="note">Transcribes in original language. Foreign language? Translation shown below in brackets. (Caches a 150MB model locally.)</p>
 
       <button id="recordBtn" disabled>Loading model…</button>
       <p id="status">⏳ Downloading model, please wait…</p>
@@ -32,16 +32,14 @@ import "../css/style.css"
       const output    = document.getElementById("output");
       const status    = document.getElementById("status");
 
-      // silence threshold
       const SILENCE_THRESHOLD = 0.01;
-      // min recording length
-      const MIN_DURATION_MS = 1000;
+      const MIN_DURATION_MS   = 1000;
 
       let transcriber;
       try {
         transcriber = await pipeline(
           "automatic-speech-recognition",
-          "Xenova/whisper-base.en",
+          "Xenova/whisper-base",
           {
             progress_callback: (p) => {
               if (p.status === "downloading" && p.total) {
@@ -63,7 +61,6 @@ import "../css/style.css"
       let isRecording   = false;
       let recordStart   = 0;
 
-      /** calc root mean square (rms) volume of a Float32Array — returns 0–1 */
       function rms(float32) {
         let sum = 0;
         for (let i = 0; i < float32.length; i++) sum += float32[i] ** 2;
@@ -96,8 +93,7 @@ import "../css/style.css"
         mediaRecorder.onstop = async () => {
           stream.getTracks().forEach(t => t.stop());
 
-          const duration = Date.now() - recordStart;
-          if (duration < MIN_DURATION_MS) {
+          if (Date.now() - recordStart < MIN_DURATION_MS) {
             status.textContent = "⚠️ Recording too short, try again.";
             resetBtn();
             return;
@@ -113,15 +109,39 @@ import "../css/style.css"
             const decoded     = await audioCtx.decodeAudioData(arrayBuffer);
             const float32     = decoded.getChannelData(0);
 
-            // if the rms is less than the silence threshold then it doesnt exist. excluding this so model doesnt hallucinate
             if (rms(float32) < SILENCE_THRESHOLD) {
               status.textContent = "⚠️ No speech detected (too quiet).";
               resetBtn();
               return;
             }
 
-            const result = await transcriber(float32, { sampling_rate: 16000 });
-            output.textContent = result.text?.trim() || "(no speech detected)";
+            // pass 1: transcribe in original language
+            const transcribeResult = await transcriber(float32, {
+              sampling_rate: 16000,
+            });
+            const originalText = transcribeResult.text?.trim() ?? "";
+
+            // pass 2: always translate to English
+            status.textContent = "⏳ Translating…";
+            const translateResult = await transcriber(float32, {
+              sampling_rate: 16000,
+              task: "translate",
+            });
+            const translatedText = translateResult.text?.trim() ?? "";
+
+            output.innerHTML = "";
+            const originalEl = document.createElement("div");
+            originalEl.textContent = originalText || "(no speech detected)";
+            output.appendChild(originalEl);
+
+            const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+            if (translatedText && normalize(translatedText) !== normalize(originalText)) {
+              const translationEl = document.createElement("div");
+              translationEl.className   = "translation";
+              translationEl.textContent = `[${translatedText}]`;
+              output.appendChild(translationEl);
+            }
+
             status.textContent = "✅ Done.";
           } catch (err) {
             status.textContent = `❌ Transcription error: ${err.message}`;
@@ -134,7 +154,7 @@ import "../css/style.css"
         isRecording           = true;
         recordBtn.textContent = "Stop Recording";
         recordBtn.classList.add("active");
-        status.textContent    = "🔴 Recording…";
+        status.textContent    = "🎙️ Recording…";
       });
 
       function resetBtn() {
@@ -145,7 +165,7 @@ import "../css/style.css"
       }
 
       clearBtn.addEventListener("click", () => {
-        output.textContent = "Transcription will appear here…";
+        output.innerHTML   = "Transcription will appear here…";
         status.textContent = "✅ Model ready. Press record to start.";
       });
     </script>

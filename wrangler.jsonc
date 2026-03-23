@@ -1,6 +1,6 @@
 {
   "name": "comp4537-termproject", 
-  "main": "dist/_worker.js/index.js",
+  "main": "dist/_worker.js",
   "compatibility_date": "2026-03-22",
   "assets": {
     "directory": "dist"

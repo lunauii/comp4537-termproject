@@ -1,5 +1,24 @@
 ---
-// Layout or Styles can go here
+const initCode = `
+#include <stdio.h>
+#include <string.h>
+
+void reverse_string(char *str) {
+    int len = strlen(str);
+    for (int i = 0; i <= len; i++) {
+        char temp = str[i];
+        str[i] = str[len - i]; 
+        str[len - i] = temp;
+    }
+}
+
+int main() {
+    char text[] = "Hello";
+    reverse_string(text);
+    printf("Reversed: %s\\n", text);
+    return 0;
+}
+`;
 ---
 
 <html lang="en">
@@ -32,28 +51,7 @@
 		<main class="container">
 			<section class="code-box">
 				<textarea id="c-code" spellcheck="false">
-/* * Task: Reverse the string in-place.
- * Bug: This code has index out-of-bounds 
- * and swap logic errors.
- */
-#include <stdio.h>
-#include <string.h>
-
-void reverse_string(char *str) {
-    int len = strlen(str);
-    for (int i = 0; i <= len; i++) {
-        char temp = str[i];
-        str[i] = str[len - i]; 
-        str[len - i] = temp;
-    }
-}
-
-int main() {
-    char text[] = "Hello";
-    reverse_string(text);
-    printf("Reversed: %s\n", text);
-    return 0;
-}
+          {initCode}
 				</textarea>
 			</section>
 

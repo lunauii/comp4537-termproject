@@ -1,0 +1,357 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Admin">
+    <div class="admin-wrapper">
+        <div class="admin-inner">
+
+            <div class="dash-header">
+                <div>
+                    <p class="dash-eyebrow">// admin dashboard</p>
+                    <h1 class="dash-title">User Management</h1>
+                </div>
+                <div class="header-stats">
+                    <div class="mini-stat">
+                        <span class="mini-stat-label">total users</span>
+                        <span class="mini-stat-value" id="totalUsers">—</span>
+                    </div>
+                    <div class="mini-stat">
+                        <span class="mini-stat-label">total api calls</span>
+                        <span class="mini-stat-value" id="totalCalls">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loadingState" class="loading-state">
+                <span class="loading-dot"></span>
+                <span class="loading-dot"></span>
+                <span class="loading-dot"></span>
+            </div>
+
+            <div id="errorState" class="alert alert-error" style="display:none;">
+                Access denied or failed to load data.
+            </div>
+
+            <div id="tableWrapper" style="display:none;">
+                <div class="table-header">
+                    <p class="table-title">all users</p>
+                    <input
+                        class="form-input search-input"
+                        type="text"
+                        id="searchInput"
+                        placeholder="filter by email..."
+                    />
+                </div>
+
+                <div class="table-container">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>id</th>
+                                <th>email</th>
+                                <th>role</th>
+                                <th>api calls</th>
+                                <th>usage</th>
+                                <th>joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</Layout>
+
+<style>
+    .admin-wrapper {
+        flex: 1;
+        padding: 3rem 2rem;
+        max-width: 1100px;
+        margin: 0 auto;
+        width: 100%;
+        animation: fadeUp 0.35s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .admin-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .dash-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .dash-eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--accent);
+        letter-spacing: 0.05em;
+        margin-bottom: 0.4rem;
+    }
+
+    .dash-title {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .header-stats {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .mini-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
+    }
+
+    .mini-stat-label {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        color: #7070a0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .mini-stat-value {
+        font-family: var(--font-mono);
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1;
+    }
+
+    .table-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .table-title {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: #7070a0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .search-input {
+        max-width: 260px;
+        padding: 0.5rem 0.9rem;
+        font-size: 0.8rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+    }
+
+    .user-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+    }
+
+    .user-table thead {
+        background: var(--bg-3);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .user-table th {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        color: #7070a0;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+    }
+
+    .user-table td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+        vertical-align: middle;
+    }
+
+    .user-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .user-table tbody tr {
+        background: var(--bg-2);
+        transition: background var(--transition);
+    }
+
+    .user-table tbody tr:hover {
+        background: var(--bg-3);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .badge-admin {
+        background: rgba(57, 255, 133, 0.12);
+        color: var(--accent);
+        border: 1px solid var(--accent-dim);
+    }
+
+    .badge-user {
+        background: rgba(255, 255, 255, 0.05);
+        color: #7070a0;
+        border: 1px solid var(--border);
+    }
+
+    .mini-bar-track {
+        width: 80px;
+        height: 4px;
+        background: var(--bg-3);
+        border-radius: 2px;
+        overflow: hidden;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 0.4rem;
+    }
+
+    .mini-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: var(--accent);
+    }
+
+    .mini-bar-fill.warning { background: var(--warning); }
+    .mini-bar-fill.danger  { background: var(--danger); }
+
+    .loading-state {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        padding: 1rem 0;
+    }
+
+    .loading-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        animation: blink 1.2s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes blink {
+        0%, 100% { opacity: 0.2; }
+        50% { opacity: 1; }
+    }
+</style>
+
+<script>
+    const API = 'https://sisa.lunaui.cc';
+
+    const token = localStorage.getItem('token');
+    const role  = localStorage.getItem('role');
+
+    if (!token) window.location.href = '/login';
+    if (role !== 'admin') window.location.href = '/dashboard';
+
+    const loadingState  = document.getElementById('loadingState');
+    const errorState    = document.getElementById('errorState');
+    const tableWrapper  = document.getElementById('tableWrapper');
+    const tableBody     = document.getElementById('userTableBody');
+    const totalUsersEl  = document.getElementById('totalUsers');
+    const totalCallsEl  = document.getElementById('totalCalls');
+    const searchInput   = document.getElementById('searchInput');
+
+    let allUsers = [];
+
+    function formatDate(dateStr) {
+        return new Date(dateStr).toLocaleDateString('en-CA');
+    }
+
+    function renderRows(users) {
+        tableBody.innerHTML = users.map(u => {
+            const pct = Math.min((u.api_calls / 20) * 100, 100);
+            const barClass = pct >= 100 ? 'danger' : pct >= 75 ? 'warning' : '';
+            return `
+                <tr>
+                    <td style="color:#7070a0">#${u.id}</td>
+                    <td>${u.email}</td>
+                    <td><span class="badge badge-${u.role}">${u.role}</span></td>
+                    <td>${u.api_calls} / 20</td>
+                    <td>
+                        <span class="mini-bar-track">
+                            <span class="mini-bar-fill ${barClass}" style="width:${pct}%"></span>
+                        </span>
+                        ${Math.round(pct)}%
+                    </td>
+                    <td style="color:#7070a0">${formatDate(u.created_at)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    searchInput.addEventListener('input', () => {
+        const q = searchInput.value.toLowerCase();
+        renderRows(allUsers.filter(u => u.email.toLowerCase().includes(q)));
+    });
+
+    async function loadUsers() {
+        try {
+            const res = await fetch(`${API}/api/v1/admin/users`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+                window.location.href = '/login';
+                return;
+            }
+
+            allUsers = await res.json();
+
+            loadingState.style.display = 'none';
+            tableWrapper.style.display = 'block';
+
+            totalUsersEl.textContent = allUsers.length;
+            totalCallsEl.textContent = allUsers.reduce((sum, u) => sum + u.api_calls, 0);
+
+            renderRows(allUsers);
+        } catch (err) {
+            loadingState.style.display = 'none';
+            errorState.style.display   = 'block';
+        }
+    }
+
+    loadUsers();
+</script>

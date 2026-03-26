@@ -1,0 +1,88 @@
+---
+export interface Props {
+    title: string;
+    description?: string;
+}
+
+const { title, description = "AI-powered C programming tutor" } = Astro.props;
+import "../css/style.css"
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} — C Tutor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <!-- Top Bar -->
+    <nav class="topbar">
+        <a href="/" class="topbar-logo">
+            <span class="dot"></span>
+            c_tutor<span style="color: var(--accent)">.</span>ai
+        </a>
+        <div class="topbar-nav" id="topbar-nav">
+            <!-- Populated by JS based on auth state -->
+        </div>
+    </nav>
+
+    <main class="page">
+        <slot />
+    </main>
+
+    <script>
+        const API = 'https://sisa.lunaui.cc';
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getRole() {
+            return localStorage.getItem('role');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            window.location.href = '/login';
+        }
+
+        function renderNav() {
+            const nav = document.getElementById('topbar-nav');
+            if (!nav) return;
+
+            const token = getToken();
+            const role = getRole();
+
+            if (!token) {
+                nav.innerHTML = `
+                    <a href="/login">login</a>
+                    <a href="/register" class="nav-accent">register</a>
+                `;
+            } else if (role === 'admin') {
+                nav.innerHTML = `
+                    <a href="/dashboard">dashboard</a>
+                    <a href="/admin">admin</a>
+                    <a href="/hint">hint tool</a>
+                    <button onclick="window.logout()">logout</button>
+                `;
+            } else {
+                nav.innerHTML = `
+                    <a href="/dashboard">dashboard</a>
+                    <a href="/hint">hint tool</a>
+                    <button onclick="window.logout()">logout</button>
+                `;
+            }
+        }
+
+        window.logout = logout;
+        renderNav();
+    </script>
+</body>
+</html>

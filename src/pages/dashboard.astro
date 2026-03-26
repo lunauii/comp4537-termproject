@@ -1,15 +1,277 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Dashboard</title>
-  </head>
-  <body>
-    <p id="dashboard"></p>
-    <script src="../lang/dashboard.js"></script>
-    <script src="../js/script.js"></script>
-  </body>
-</html>
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Dashboard">
+    <div class="dashboard-wrapper">
+        <div class="dashboard-inner">
+
+            <div class="dash-header">
+                <div>
+                    <p class="dash-eyebrow">// user dashboard</p>
+                    <h1 class="dash-title">Welcome back<span id="userEmail"></span></h1>
+                </div>
+            </div>
+
+            <!-- API Usage Card -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">api calls used</p>
+                    <p class="stat-value" id="apiCalls">—</p>
+                    <p class="stat-sub">of 20 free calls</p>
+                    <div class="usage-bar-track">
+                        <div class="usage-bar-fill" id="usageBar"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <p class="stat-label">calls remaining</p>
+                    <p class="stat-value" id="callsRemaining">—</p>
+                    <p class="stat-sub">before limit reached</p>
+                </div>
+
+                <div class="stat-card">
+                    <p class="stat-label">account type</p>
+                    <p class="stat-value accent" id="accountRole">—</p>
+                    <p class="stat-sub">access level</p>
+                </div>
+            </div>
+
+            <!-- Warning banner -->
+            <div id="limitWarning" class="alert alert-warning" style="display:none;">
+                ⚠ You have used all 20 of your free API calls. The hint tool will not generate new hints until the limit is reset by an admin.
+            </div>
+
+            <div id="nearLimitWarning" class="alert alert-warning" style="display:none;">
+                ⚠ You are running low on API calls. Use them wisely.
+            </div>
+
+            <!-- Quick actions -->
+            <div class="actions-row">
+                <a href="/hint" class="btn btn-primary">open hint tool</a>
+            </div>
+
+            <div id="loadingState" class="loading-state">
+                <span class="loading-dot"></span>
+                <span class="loading-dot"></span>
+                <span class="loading-dot"></span>
+            </div>
+
+            <div id="errorState" class="alert alert-error" style="display:none;">
+                Failed to load user data. <a href="/login" style="color:inherit;text-decoration:underline;">Sign in again</a>
+            </div>
+
+        </div>
+    </div>
+</Layout>
+
+<style>
+    .dashboard-wrapper {
+        flex: 1;
+        padding: 3rem 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+        animation: fadeUp 0.35s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .dashboard-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .dash-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .dash-eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--accent);
+        letter-spacing: 0.05em;
+        margin-bottom: 0.4rem;
+    }
+
+    .dash-title {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .stat-card {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        transition: border-color var(--transition);
+    }
+
+    .stat-card:hover {
+        border-color: #3a3a4a;
+    }
+
+    .stat-label {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        color: #7070a0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .stat-value {
+        font-family: var(--font-mono);
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1;
+        margin: 0.2rem 0;
+    }
+
+    .stat-value.accent {
+        color: var(--accent);
+        font-size: 1.4rem;
+    }
+
+    .stat-value.danger {
+        color: var(--danger);
+    }
+
+    .stat-sub {
+        font-size: 0.78rem;
+        color: #7070a0;
+    }
+
+    .usage-bar-track {
+        margin-top: 0.75rem;
+        height: 4px;
+        background: var(--bg-3);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .usage-bar-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 2px;
+        width: 0%;
+        transition: width 0.6s ease, background 0.3s ease;
+    }
+
+    .usage-bar-fill.warning {
+        background: var(--warning);
+    }
+
+    .usage-bar-fill.danger {
+        background: var(--danger);
+    }
+
+    .actions-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .loading-state {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        padding: 1rem 0;
+    }
+
+    .loading-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        animation: blink 1.2s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes blink {
+        0%, 100% { opacity: 0.2; }
+        50% { opacity: 1; }
+    }
+</style>
+
+<script>
+    const API = 'https://sisa.lunaui.cc';
+
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login';
+
+    const loadingState  = document.getElementById('loadingState');
+    const errorState    = document.getElementById('errorState');
+    const apiCallsEl    = document.getElementById('apiCalls');
+    const remainingEl   = document.getElementById('callsRemaining');
+    const roleEl        = document.getElementById('accountRole');
+    const usageBar      = document.getElementById('usageBar');
+    const emailEl       = document.getElementById('userEmail');
+    const limitWarn     = document.getElementById('limitWarning');
+    const nearLimitWarn = document.getElementById('nearLimitWarning');
+
+    async function loadUser() {
+        try {
+            const res = await fetch(`${API}/api/v1/user/me`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+                window.location.href = '/login';
+                return;
+            }
+
+            const user = await res.json();
+
+            loadingState.style.display = 'none';
+
+            const used      = user.api_calls;
+            const remaining = Math.max(0, 20 - used);
+            const pct       = Math.min((used / 20) * 100, 100);
+
+            emailEl.textContent = `, ${user.email.split('@')[0]}`;
+            apiCallsEl.textContent  = used;
+            remainingEl.textContent = remaining;
+            roleEl.textContent      = user.role;
+
+            usageBar.style.width = `${pct}%`;
+            if (pct >= 100) usageBar.classList.add('danger');
+            else if (pct >= 75) usageBar.classList.add('warning');
+
+            if (used >= 20) {
+                limitWarn.style.display = 'block';
+                apiCallsEl.classList.add('danger');
+            } else if (used >= 15) {
+                nearLimitWarn.style.display = 'block';
+            }
+
+        } catch (err) {
+            loadingState.style.display = 'none';
+            errorState.style.display   = 'block';
+        }
+    }
+
+    loadUser();
+</script>

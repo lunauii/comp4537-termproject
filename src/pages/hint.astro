@@ -1,24 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-
-const initCode = `#include <stdio.h>
-#include <string.h>
-
-void reverse_string(char *str) {
-    int len = strlen(str);
-    for (int i = 0; i <= len; i++) {
-        char temp = str[i];
-        str[i] = str[len - i];
-        str[len - i] = temp;
-    }
-}
-
-int main() {
-    char text[] = "Hello";
-    reverse_string(text);
-    printf("Reversed: %s\\n", text);
-    return 0;
-}`;
 ---
 
 <Layout title="Hint Tool">
@@ -26,16 +7,31 @@ int main() {
 
         <!-- Sidebar -->
         <aside class="hint-sidebar">
+
             <div class="sidebar-section">
-                <p class="sidebar-label">problem statement</p>
-                <textarea
-                    id="problemStatement"
-                    class="problem-input"
-                    placeholder="Describe the task the student is trying to solve..."
-                >Reverse a string in-place without using extra memory.</textarea>
+                <p class="sidebar-label">select example</p>
+                <div class="example-list" id="exampleList">
+                    <button class="example-btn active" data-index="0">
+                        <span class="example-num">01</span>
+                        <span class="example-name">String Reversal</span>
+                    </button>
+                    <button class="example-btn" data-index="1">
+                        <span class="example-num">02</span>
+                        <span class="example-name">Array Sum</span>
+                    </button>
+                    <button class="example-btn" data-index="2">
+                        <span class="example-num">03</span>
+                        <span class="example-name">Factorial</span>
+                    </button>
+                </div>
             </div>
 
             <div class="sidebar-section">
+                <p class="sidebar-label">problem statement</p>
+                <div class="problem-display" id="problemDisplay"></div>
+            </div>
+
+            <div class="sidebar-section hint-output-section">
                 <p class="sidebar-label">hint output</p>
                 <div class="hint-pane" id="hintDisplay">
                     <span class="hint-placeholder">Click "Get Hint" to see AI suggestions...</span>
@@ -50,23 +46,18 @@ int main() {
             <div id="limitWarning" class="alert alert-warning" style="display:none; margin-top: 0.5rem;">
                 ⚠ API call limit reached (20/20).
             </div>
+
         </aside>
 
         <!-- Code Editor -->
         <main class="editor-area">
             <div class="editor-topbar">
                 <div class="editor-tabs">
-                    <span class="editor-tab active">main.c</span>
+                    <span class="editor-tab active" id="editorTabName">main.c</span>
                 </div>
                 <div class="editor-info" id="callsInfo"></div>
             </div>
-            <textarea
-                id="cCode"
-                class="code-editor"
-                spellcheck="false"
-                autocorrect="off"
-                autocapitalize="off"
-            >{initCode}</textarea>
+            <div id="editorMount"></div>
         </main>
 
     </div>
@@ -76,19 +67,18 @@ int main() {
     .hint-wrapper {
         flex: 1;
         display: grid;
-        grid-template-columns: 340px 1fr;
+        grid-template-columns: 320px 1fr;
         height: calc(100vh - 60px);
         overflow: hidden;
     }
 
-    /* Sidebar */
     .hint-sidebar {
         background: var(--bg-2);
         border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
         gap: 1.25rem;
-        padding: 1.5rem;
+        padding: 1.25rem;
         overflow-y: auto;
     }
 
@@ -106,23 +96,73 @@ int main() {
         flex-direction: column;
     }
 
-    .problem-input {
+    .hint-output-section {
+        flex: 1;
+    }
+
+    .example-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .example-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
         background: var(--bg-3);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        color: var(--text);
-        padding: 0.75rem;
-        font-family: var(--font-mono);
-        font-size: 0.8rem;
-        resize: vertical;
-        min-height: 80px;
-        outline: none;
-        line-height: 1.6;
-        transition: border-color var(--transition);
+        padding: 0.65rem 0.9rem;
+        cursor: pointer;
+        transition: all var(--transition);
+        text-align: left;
+        width: 100%;
     }
 
-    .problem-input:focus {
+    .example-btn:hover {
+        border-color: #3a3a4a;
+        background: #1e1e26;
+    }
+
+    .example-btn.active {
         border-color: var(--accent-dim);
+        background: rgba(57, 255, 133, 0.06);
+    }
+
+    .example-num {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        color: var(--accent);
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        flex-shrink: 0;
+    }
+
+    .example-btn:not(.active) .example-num {
+        color: #7070a0;
+    }
+
+    .example-name {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--text);
+    }
+
+    .example-btn:not(.active) .example-name {
+        color: #7070a0;
+    }
+
+    .problem-display {
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.75rem;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: #a0a0c0;
+        line-height: 1.6;
+        min-height: 52px;
     }
 
     .hint-pane {
@@ -130,7 +170,7 @@ int main() {
         border: 1px solid var(--border);
         border-radius: var(--radius);
         padding: 1rem;
-        min-height: 160px;
+        min-height: 120px;
         font-family: var(--font-mono);
         font-size: 0.82rem;
         line-height: 1.7;
@@ -156,13 +196,14 @@ int main() {
     .hint-btn {
         width: 100%;
         padding: 0.85rem;
+        flex-shrink: 0;
     }
 
-    /* Editor */
     .editor-area {
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        background: #0d0d0f;
     }
 
     .editor-topbar {
@@ -178,25 +219,20 @@ int main() {
 
     .editor-tabs {
         display: flex;
-        gap: 0;
     }
 
     .editor-tab {
         font-family: var(--font-mono);
         font-size: 0.75rem;
-        color: #7070a0;
+        color: var(--text);
         padding: 0 1rem;
         height: 38px;
         display: flex;
         align-items: center;
         border-right: 1px solid var(--border);
-        cursor: default;
-    }
-
-    .editor-tab.active {
-        color: var(--text);
-        background: var(--bg-2);
         border-bottom: 2px solid var(--accent);
+        background: var(--bg-2);
+        cursor: default;
     }
 
     .editor-info {
@@ -205,19 +241,39 @@ int main() {
         color: #7070a0;
     }
 
-    .code-editor {
+    #editorMount {
         flex: 1;
-        background: var(--bg);
-        color: #c9d1d9;
-        border: none;
-        padding: 1.25rem 1.5rem;
-        font-family: var(--font-mono);
-        font-size: 0.875rem;
-        line-height: 1.7;
-        resize: none;
-        outline: none;
-        tab-size: 4;
-        overflow-y: auto;
+        overflow: hidden;
+    }
+
+    #editorMount .cm-editor {
+        height: 100%;
+        background: #0d0d0f !important;
+    }
+
+    #editorMount .cm-scroller {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 0.875rem !important;
+        line-height: 1.7 !important;
+        overflow: auto;
+    }
+
+    #editorMount .cm-focused {
+        outline: none !important;
+    }
+
+    #editorMount .cm-gutters {
+        background: #0d0d0f !important;
+        border-right: 1px solid #1c1c21 !important;
+        color: #404055 !important;
+    }
+
+    #editorMount .cm-activeLineGutter {
+        background: #141417 !important;
+    }
+
+    #editorMount .cm-activeLine {
+        background: rgba(255,255,255,0.025) !important;
     }
 
     @media (max-width: 768px) {
@@ -230,34 +286,152 @@ int main() {
         .hint-sidebar {
             border-right: none;
             border-bottom: 1px solid var(--border);
+            max-height: 60vh;
         }
 
-        .editor-area {
+        #editorMount {
             min-height: 400px;
         }
     }
 </style>
 
-<script>
-    const API = 'https://sisa.lunaui.cc';
+<script type="module">
+    import { EditorView, basicSetup } from 'https://esm.sh/codemirror@6.0.1';
+    import { cpp } from 'https://esm.sh/@codemirror/lang-cpp@6.0.2';
+    import { oneDark } from 'https://esm.sh/@codemirror/theme-one-dark@6.1.2';
 
+    const API = 'https://sisa.lunaui.cc';
     const token = localStorage.getItem('token');
     if (!token) window.location.href = '/login';
+
+    const EXAMPLES = [
+        {
+            label: "String Reversal",
+            problem: "Reverse a string in-place without using extra memory.",
+            code: `#include <stdio.h>
+#include <string.h>
+
+void reverse_string(char *str) {
+    int len = strlen(str);
+    for (int i = 0; i <= len; i++) {
+        char temp = str[i];
+        str[i] = str[len - i];
+        str[len - i] = temp;
+    }
+}
+
+int main() {
+    char text[] = "Hello";
+    reverse_string(text);
+    printf("Reversed: %s\\n", text);
+    return 0;
+}`,
+        },
+        {
+            label: "Array Sum",
+            problem: "Sum all elements in an integer array of size 5.",
+            code: `#include <stdio.h>
+
+int sum_array(int arr[], int size) {
+    int total = 0;
+    for (int i = 1; i <= size; i++) {
+        total += arr[i];
+    }
+    return total;
+}
+
+int main() {
+    int nums[] = {1, 2, 3, 4, 5};
+    printf("Sum: %d\\n", sum_array(nums, 5));
+    return 0;
+}`,
+        },
+        {
+            label: "Factorial",
+            problem: "Calculate the factorial of a number recursively.",
+            code: `#include <stdio.h>
+
+int factorial(int n) {
+    if (n = 0) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+int main() {
+    printf("5! = %d\\n", factorial(5));
+    return 0;
+}`,
+        },
+    ];
 
     const hintBtn        = document.getElementById('hintBtn');
     const hintDisplay    = document.getElementById('hintDisplay');
     const statusMsg      = document.getElementById('statusMsg');
-    const codeArea       = document.getElementById('cCode');
-    const problemStmt    = document.getElementById('problemStatement');
     const callsInfo      = document.getElementById('callsInfo');
     const limitWarning   = document.getElementById('limitWarning');
+    const problemDisplay = document.getElementById('problemDisplay');
+    const exampleBtns    = document.querySelectorAll('.example-btn');
 
-    // Load current call count
+    let currentIndex = 0;
+
+    const editor = new EditorView({
+        doc: EXAMPLES[0].code,
+        extensions: [
+            basicSetup,
+            cpp(),
+            oneDark,
+            EditorView.theme({
+                '&': { height: '100%', background: '#0d0d0f' },
+                '&.cm-focused': { outline: 'none' },
+            }),
+            EditorView.editable.of(false),
+        ],
+        parent: document.getElementById('editorMount'),
+    });
+
+    problemDisplay.textContent = EXAMPLES[0].problem;
+
+    function switchExample(index) {
+        currentIndex = index;
+
+        exampleBtns.forEach((btn, i) => {
+            btn.classList.toggle('active', i === index);
+        });
+
+        problemDisplay.textContent = EXAMPLES[index].problem;
+
+        editor.dispatch({
+            changes: {
+                from: 0,
+                to: editor.state.doc.length,
+                insert: EXAMPLES[index].code,
+            },
+        });
+
+        hintDisplay.innerHTML = '<span class="hint-placeholder">Click "Get Hint" to see AI suggestions...</span>';
+        statusMsg.textContent = '';
+    }
+
+    exampleBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            switchExample(parseInt(btn.dataset.index));
+        });
+    });
+
     async function loadCallCount() {
         try {
             const res = await fetch(`${API}/api/v1/user/me`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
+
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+                window.location.href = '/login';
+                return;
+            }
+
             const user = await res.json();
             callsInfo.textContent = `${user.api_calls} / 20 api calls used`;
 
@@ -270,21 +444,13 @@ int main() {
 
     loadCallCount();
 
-    // Tab key support in textarea
-    codeArea.addEventListener('keydown', (e) => {
-        if (e.key === 'Tab') {
-            e.preventDefault();
-            const start = codeArea.selectionStart;
-            const end   = codeArea.selectionEnd;
-            codeArea.value = codeArea.value.substring(0, start) + '    ' + codeArea.value.substring(end);
-            codeArea.selectionStart = codeArea.selectionEnd = start + 4;
-        }
-    });
-
     hintBtn.addEventListener('click', async () => {
-        hintDisplay.innerHTML = '';
+        hintDisplay.textContent = '';
         hintBtn.disabled = true;
         statusMsg.textContent = 'AI is thinking...';
+
+        const code             = editor.state.doc.toString();
+        const problemStatement = EXAMPLES[currentIndex].problem;
 
         try {
             const res = await fetch(`${API}/api/v1/getHintStream`, {
@@ -293,10 +459,7 @@ int main() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    code: codeArea.value,
-                    problemStatement: problemStmt.value,
-                }),
+                body: JSON.stringify({ code, problemStatement }),
             });
 
             if (res.status === 429) {

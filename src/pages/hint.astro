@@ -1,13 +1,14 @@
 ---
-const initCode = `
-#include <stdio.h>
+import Layout from '../layouts/Layout.astro';
+
+const initCode = `#include <stdio.h>
 #include <string.h>
 
 void reverse_string(char *str) {
     int len = strlen(str);
     for (int i = 0; i <= len; i++) {
         char temp = str[i];
-        str[i] = str[len - i]; 
+        str[i] = str[len - i];
         str[len - i] = temp;
     }
 }
@@ -17,109 +18,347 @@ int main() {
     reverse_string(text);
     printf("Reversed: %s\\n", text);
     return 0;
-}
-`;
+}`;
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<title>C Tutor - AI Hint POC</title>
-		<style>
-			body { font-family: system-ui, sans-serif; background: #13151a; color: white; padding: 2rem; }
-			.container { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; max-width: 1200px; margin: 0 auto; }
-			header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #333; padding-bottom: 1rem; }
-			
-			.code-box { background: #1e1e1e; padding: 1rem; border-radius: 8px; border: 1px solid #444; position: relative; }
-			textarea { width: 100%; height: 400px; background: transparent; color: #d4d4d4; border: none; font-family: 'Fira Code', monospace; font-size: 14px; resize: none; outline: none; }
-			
-			.hint-pane { background: #23262d; padding: 1.5rem; border-radius: 8px; border: 1px solid #3b82f6; height: fit-content; min-height: 200px; }
-			.hint-text { line-height: 1.6; color: #e0e0e0; white-space: pre-wrap; }
-			.hint-text:empty::before { content: "Click 'Get Hint' to see AI suggestions..."; color: #666; font-style: italic; }
-			
-			button { background: #3b82f6; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-			button:disabled { opacity: 0.5; cursor: not-allowed; }
-			.status { font-size: 0.8rem; margin-top: 1rem; color: #999; }
-		</style>
-	</head>
-	<body>
-		<header>
-			<h1>C Programming Tutor</h1>
-			<button id="hint-btn">Get a Hint</button>
-		</header>
+<Layout title="Hint Tool">
+    <div class="hint-wrapper">
 
-		<main class="container">
-			<section class="code-box">
-				<textarea id="c-code" spellcheck="false">
-          {initCode}
-				</textarea>
-			</section>
+        <!-- Sidebar -->
+        <aside class="hint-sidebar">
+            <div class="sidebar-section">
+                <p class="sidebar-label">problem statement</p>
+                <textarea
+                    id="problemStatement"
+                    class="problem-input"
+                    placeholder="Describe the task the student is trying to solve..."
+                >Reverse a string in-place without using extra memory.</textarea>
+            </div>
 
-			<aside class="hint-pane">
-				<h3>💡 Tutor Hint</h3>
-				<div id="hint-display" class="hint-text"></div>
-				<div id="status-msg" class="status"></div>
-			</aside>
-		</main>
+            <div class="sidebar-section">
+                <p class="sidebar-label">hint output</p>
+                <div class="hint-pane" id="hintDisplay">
+                    <span class="hint-placeholder">Click "Get Hint" to see AI suggestions...</span>
+                </div>
+                <p class="hint-status" id="statusMsg"></p>
+            </div>
 
-		<script>
-			const hintBtn = document.getElementById('hint-btn');
-			const hintDisplay = document.getElementById('hint-display');
-			const statusMsg = document.getElementById('status-msg');
-			const codeArea = document.getElementById('c-code');
+            <button class="btn btn-primary hint-btn" id="hintBtn">
+                get hint
+            </button>
 
-			hintBtn.addEventListener('click', async () => {
-				// reset ui
-				hintDisplay.textContent = "";
-				hintBtn.disabled = true;
-				statusMsg.textContent = "AI is thinking...";
+            <div id="limitWarning" class="alert alert-warning" style="display:none; margin-top: 0.5rem;">
+                ⚠ API call limit reached (20/20).
+            </div>
+        </aside>
 
-				try {
-					// call backend
-					const response = await fetch('https://sisa.lunaui.cc/api/v1/getHintStream', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ 
-							code: codeArea.value,
-							problemStatement: "Reverse a string in-place without using extra memory."
-						}),
-					});
+        <!-- Code Editor -->
+        <main class="editor-area">
+            <div class="editor-topbar">
+                <div class="editor-tabs">
+                    <span class="editor-tab active">main.c</span>
+                </div>
+                <div class="editor-info" id="callsInfo"></div>
+            </div>
+            <textarea
+                id="cCode"
+                class="code-editor"
+                spellcheck="false"
+                autocorrect="off"
+                autocapitalize="off"
+            >{initCode}</textarea>
+        </main>
 
-					if (!response.ok) throw new Error("Server error");
+    </div>
+</Layout>
 
-					// handle stream
-					const reader = response.body.getReader();
-					const decoder = new TextDecoder();
+<style>
+    .hint-wrapper {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        height: calc(100vh - 60px);
+        overflow: hidden;
+    }
 
-					while (true) {
-						const { value, done } = await reader.read();
-						if (done) break;
+    /* Sidebar */
+    .hint-sidebar {
+        background: var(--bg-2);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
 
-						const chunk = decoder.decode(value);
-						const lines = chunk.split('\n');
+    .sidebar-label {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        color: #7070a0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.5rem;
+    }
 
-						for (const line of lines) {
-							if (line.startsWith('data: ')) {
-								const dataStr = line.replace('data: ', '');
-								if (dataStr === '[DONE]') break;
-								
-								try {
-									const parsed = JSON.parse(dataStr);
-									if (parsed.text) {
-										hintDisplay.textContent += parsed.text;
-									}
-								} catch (e) { /* partial chunk */ }
-							}
-						}
-					}
-					statusMsg.textContent = "Hint complete.";
-				} catch (err) {
-					hintDisplay.textContent = "Error: Could not reach the tutor. Make sure your backend is running!";
-					statusMsg.textContent = "";
-				} finally {
-					hintBtn.disabled = false;
-				}
-			});
-		</script>
-	</body>
-</html>
+    .sidebar-section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .problem-input {
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        color: var(--text);
+        padding: 0.75rem;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        resize: vertical;
+        min-height: 80px;
+        outline: none;
+        line-height: 1.6;
+        transition: border-color var(--transition);
+    }
+
+    .problem-input:focus {
+        border-color: var(--accent-dim);
+    }
+
+    .hint-pane {
+        background: var(--bg-3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem;
+        min-height: 160px;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        line-height: 1.7;
+        color: var(--text);
+        white-space: pre-wrap;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .hint-placeholder {
+        color: #404055;
+        font-style: italic;
+    }
+
+    .hint-status {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: #7070a0;
+        margin-top: 0.4rem;
+        min-height: 1em;
+    }
+
+    .hint-btn {
+        width: 100%;
+        padding: 0.85rem;
+    }
+
+    /* Editor */
+    .editor-area {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .editor-topbar {
+        background: var(--bg-3);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1rem;
+        height: 38px;
+        flex-shrink: 0;
+    }
+
+    .editor-tabs {
+        display: flex;
+        gap: 0;
+    }
+
+    .editor-tab {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: #7070a0;
+        padding: 0 1rem;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        border-right: 1px solid var(--border);
+        cursor: default;
+    }
+
+    .editor-tab.active {
+        color: var(--text);
+        background: var(--bg-2);
+        border-bottom: 2px solid var(--accent);
+    }
+
+    .editor-info {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        color: #7070a0;
+    }
+
+    .code-editor {
+        flex: 1;
+        background: var(--bg);
+        color: #c9d1d9;
+        border: none;
+        padding: 1.25rem 1.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.875rem;
+        line-height: 1.7;
+        resize: none;
+        outline: none;
+        tab-size: 4;
+        overflow-y: auto;
+    }
+
+    @media (max-width: 768px) {
+        .hint-wrapper {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+            height: auto;
+        }
+
+        .hint-sidebar {
+            border-right: none;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .editor-area {
+            min-height: 400px;
+        }
+    }
+</style>
+
+<script>
+    const API = 'https://sisa.lunaui.cc';
+
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login';
+
+    const hintBtn        = document.getElementById('hintBtn');
+    const hintDisplay    = document.getElementById('hintDisplay');
+    const statusMsg      = document.getElementById('statusMsg');
+    const codeArea       = document.getElementById('cCode');
+    const problemStmt    = document.getElementById('problemStatement');
+    const callsInfo      = document.getElementById('callsInfo');
+    const limitWarning   = document.getElementById('limitWarning');
+
+    // Load current call count
+    async function loadCallCount() {
+        try {
+            const res = await fetch(`${API}/api/v1/user/me`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const user = await res.json();
+            callsInfo.textContent = `${user.api_calls} / 20 api calls used`;
+
+            if (user.api_calls >= 20) {
+                hintBtn.disabled = true;
+                limitWarning.style.display = 'block';
+            }
+        } catch {}
+    }
+
+    loadCallCount();
+
+    // Tab key support in textarea
+    codeArea.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = codeArea.selectionStart;
+            const end   = codeArea.selectionEnd;
+            codeArea.value = codeArea.value.substring(0, start) + '    ' + codeArea.value.substring(end);
+            codeArea.selectionStart = codeArea.selectionEnd = start + 4;
+        }
+    });
+
+    hintBtn.addEventListener('click', async () => {
+        hintDisplay.innerHTML = '';
+        hintBtn.disabled = true;
+        statusMsg.textContent = 'AI is thinking...';
+
+        try {
+            const res = await fetch(`${API}/api/v1/getHintStream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    code: codeArea.value,
+                    problemStatement: problemStmt.value,
+                }),
+            });
+
+            if (res.status === 429) {
+                const data = await res.json();
+                if (data.limitReached) {
+                    hintDisplay.textContent = 'You have reached your 20 call limit.';
+                    limitWarning.style.display = 'block';
+                    hintBtn.disabled = true;
+                } else {
+                    hintDisplay.textContent = 'Too many requests. Wait a moment.';
+                    hintBtn.disabled = false;
+                }
+                statusMsg.textContent = '';
+                return;
+            }
+
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+                window.location.href = '/login';
+                return;
+            }
+
+            if (!res.ok) {
+                hintDisplay.textContent = 'Server error. Try again.';
+                statusMsg.textContent = '';
+                hintBtn.disabled = false;
+                return;
+            }
+
+            const reader  = res.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.replace('data: ', '');
+                        if (dataStr === '[DONE]') break;
+                        try {
+                            const parsed = JSON.parse(dataStr);
+                            if (parsed.text) {
+                                hintDisplay.textContent += parsed.text;
+                            }
+                        } catch {}
+                    }
+                }
+            }
+
+            statusMsg.textContent = 'Hint complete.';
+            loadCallCount();
+
+        } catch (err) {
+            hintDisplay.textContent = 'Could not reach the server.';
+            statusMsg.textContent = '';
+        } finally {
+            hintBtn.disabled = false;
+        }
+    });
+</script>

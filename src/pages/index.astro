@@ -1,173 +1,278 @@
 ---
-import "../css/style.css"
+import Layout from '../layouts/Layout.astro';
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Speech to Text</title>
-  </head>
-  <body>
-    <div class="container">
-      <h1>Speech → Text</h1>
-      <p class="note">Transcribes in original language. Foreign language? Translation shown below in brackets. (Caches a 150MB model locally.)</p>
+<Layout title="Home">
+    <div class="hero-wrapper">
+        <div class="bg-grid" aria-hidden="true"></div>
+        <div class="bg-glow" aria-hidden="true"></div>
 
-      <button id="recordBtn" disabled>Loading model…</button>
-      <p id="status">⏳ Downloading model, please wait…</p>
-      <div id="output">Transcription will appear here…</div>
-      <button id="clearBtn">Clear</button>
+        <div class="hero-content">
+            <p class="hero-eyebrow">
+                <span class="eyebrow-dot"></span>
+                ai-powered c programming tutor
+            </p>
+            <h1 class="hero-title">
+                Debug smarter.<br />
+                <span class="hero-title-accent">Learn faster.</span>
+            </h1>
+            <p class="hero-sub">
+                Submit your C code and get instant, context-aware hints
+                without being handed the answer.
+            </p>
+
+            <div class="hero-actions">
+                <a href="/register" class="btn btn-primary">get started</a>
+                <a href="/login" class="btn btn-ghost">sign in</a>
+            </div>
+
+            <div class="hero-features">
+                <div class="feature">
+                    <span class="feature-icon">⟡</span>
+                    <span>AI hints, not solutions</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">⟡</span>
+                    <span>Tracks your usage</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">⟡</span>
+                    <span>Instructor dashboard</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decorative code block -->
+        <div class="hero-code" aria-hidden="true">
+            <div class="code-window">
+                <div class="code-window-bar">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                    <span class="code-window-title">main.c</span>
+                </div>
+                <pre class="code-window-body"><code><span class="c-keyword">#include</span> <span class="c-string">&lt;stdio.h&gt;</span>
+
+<span class="c-type">void</span> <span class="c-fn">reverse</span>(<span class="c-type">char</span> *str) {"{"}
+    <span class="c-type">int</span> len = strlen(str);
+    <span class="c-comment">// 🤔 something's off here...</span>
+    <span class="c-keyword">for</span> (<span class="c-type">int</span> i = <span class="c-num">0</span>; i &lt;= len; i++) {"{"}
+        <span class="c-type">char</span> tmp = str[i];
+        str[i] = str[len - i];
+        str[len - i] = tmp;
+    {"}"}
+{"}"}
+
+<span class="c-comment">// → get a hint ↓</span></code></pre>
+                <div class="code-hint-bubble">
+                    <span class="hint-typing">Your loop boundary includes the null terminator...</span>
+                </div>
+            </div>
+        </div>
     </div>
+</Layout>
 
-    <script type="module">
-      import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+<style>
+    .hero-wrapper {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 4rem;
+        padding: 5rem 4rem;
+        position: relative;
+        overflow: hidden;
+        min-height: calc(100vh - 60px);
+    }
 
-      env.allowLocalModels = false;
-      env.useBrowserCache  = true;
+    .bg-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(57, 255, 133, 0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(57, 255, 133, 0.025) 1px, transparent 1px);
+        background-size: 48px 48px;
+        pointer-events: none;
+        mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
+    }
 
-      const recordBtn = document.getElementById("recordBtn");
-      const clearBtn  = document.getElementById("clearBtn");
-      const output    = document.getElementById("output");
-      const status    = document.getElementById("status");
+    .bg-glow {
+        position: absolute;
+        top: 20%;
+        left: 10%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(ellipse, rgba(57, 255, 133, 0.06) 0%, transparent 70%);
+        pointer-events: none;
+    }
 
-      const SILENCE_THRESHOLD = 0.01;
-      const MIN_DURATION_MS   = 1000;
+    .hero-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
 
-      let transcriber;
-      try {
-        transcriber = await pipeline(
-          "automatic-speech-recognition",
-          "Xenova/whisper-base",
-          {
-            progress_callback: (p) => {
-              if (p.status === "downloading" && p.total) {
-                const pct = Math.round((p.loaded / p.total) * 100);
-                status.textContent = `⏳ Downloading model… ${pct}%`;
-              }
-            }
-          }
-        );
-        status.textContent    = "✅ Model ready. Press record to start.";
-        recordBtn.textContent = "Start Recording";
-        recordBtn.disabled    = false;
-      } catch (err) {
-        status.textContent = `❌ Failed to load model: ${err.message}`;
-      }
+    .hero-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--accent);
+        letter-spacing: 0.06em;
+    }
 
-      let mediaRecorder = null;
-      let audioChunks   = [];
-      let isRecording   = false;
-      let recordStart   = 0;
+    .eyebrow-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: 0 0 6px var(--accent);
+        animation: pulse 2.5s ease-in-out infinite;
+    }
 
-      function rms(float32) {
-        let sum = 0;
-        for (let i = 0; i < float32.length; i++) sum += float32[i] ** 2;
-        return Math.sqrt(sum / float32.length);
-      }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
 
-      recordBtn.addEventListener("click", async () => {
-        if (isRecording) {
-          mediaRecorder.stop();
-          return;
+    .hero-title {
+        font-size: clamp(2.5rem, 5vw, 3.8rem);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+        color: var(--text);
+    }
+
+    .hero-title-accent {
+        color: var(--accent);
+    }
+
+    .hero-sub {
+        font-size: 1.05rem;
+        color: #7070a0;
+        line-height: 1.7;
+        max-width: 420px;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-features {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding-top: 0.5rem;
+    }
+
+    .feature {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        color: #7070a0;
+    }
+
+    .feature-icon {
+        color: var(--accent);
+        font-size: 0.7rem;
+    }
+
+    /* Code window */
+    .hero-code {
+        position: relative;
+        z-index: 1;
+    }
+
+    .code-window {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(57, 255, 133, 0.05);
+        animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50%       { transform: translateY(-8px); }
+    }
+
+    .code-window-bar {
+        background: var(--bg-3);
+        border-bottom: 1px solid var(--border);
+        padding: 0.6rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .dot.red    { background: #ff5f57; }
+    .dot.yellow { background: #febc2e; }
+    .dot.green  { background: #28c840; }
+
+    .code-window-title {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: #7070a0;
+        margin-left: 0.5rem;
+    }
+
+    .code-window-body {
+        padding: 1.25rem 1.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        line-height: 1.8;
+        overflow: hidden;
+    }
+
+    .c-keyword { color: #ff7b72; }
+    .c-string  { color: #a5d6ff; }
+    .c-type    { color: #ffa657; }
+    .c-fn      { color: #d2a8ff; }
+    .c-comment { color: #7070a0; font-style: italic; }
+    .c-num     { color: #79c0ff; }
+
+    .code-hint-bubble {
+        margin: 0 1.25rem 1.25rem;
+        background: rgba(57, 255, 133, 0.07);
+        border: 1px solid var(--accent-dim);
+        border-radius: var(--radius);
+        padding: 0.65rem 0.9rem;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--accent);
+    }
+
+    .hint-typing::after {
+        content: '▋';
+        animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+
+    @media (max-width: 900px) {
+        .hero-wrapper {
+            grid-template-columns: 1fr;
+            padding: 3rem 2rem;
         }
 
-        let stream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (err) {
-          status.textContent = `❌ Mic error: ${err.message}`;
-          return;
+        .hero-code {
+            display: none;
         }
-
-        const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
-        mediaRecorder  = new MediaRecorder(stream, { mimeType });
-        audioChunks    = [];
-        recordStart    = Date.now();
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) audioChunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = async () => {
-          stream.getTracks().forEach(t => t.stop());
-
-          if (Date.now() - recordStart < MIN_DURATION_MS) {
-            status.textContent = "⚠️ Recording too short, try again.";
-            resetBtn();
-            return;
-          }
-
-          recordBtn.disabled = true;
-          status.textContent = "⏳ Transcribing…";
-
-          try {
-            const blob        = new Blob(audioChunks, { type: mimeType });
-            const arrayBuffer = await blob.arrayBuffer();
-            const audioCtx    = new AudioContext({ sampleRate: 16000 });
-            const decoded     = await audioCtx.decodeAudioData(arrayBuffer);
-            const float32     = decoded.getChannelData(0);
-
-            if (rms(float32) < SILENCE_THRESHOLD) {
-              status.textContent = "⚠️ No speech detected (too quiet).";
-              resetBtn();
-              return;
-            }
-
-            // pass 1: transcribe in original language
-            const transcribeResult = await transcriber(float32, {
-              sampling_rate: 16000,
-            });
-            const originalText = transcribeResult.text?.trim() ?? "";
-
-            // pass 2: always translate to English
-            status.textContent = "⏳ Translating…";
-            const translateResult = await transcriber(float32, {
-              sampling_rate: 16000,
-              task: "translate",
-            });
-            const translatedText = translateResult.text?.trim() ?? "";
-
-            output.innerHTML = "";
-            const originalEl = document.createElement("div");
-            originalEl.textContent = originalText || "(no speech detected)";
-            output.appendChild(originalEl);
-
-            const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-            if (translatedText && normalize(translatedText) !== normalize(originalText)) {
-              const translationEl = document.createElement("div");
-              translationEl.className   = "translation";
-              translationEl.textContent = `[${translatedText}]`;
-              output.appendChild(translationEl);
-            }
-
-            status.textContent = "✅ Done.";
-          } catch (err) {
-            status.textContent = `❌ Transcription error: ${err.message}`;
-          }
-
-          resetBtn();
-        };
-
-        mediaRecorder.start();
-        isRecording           = true;
-        recordBtn.textContent = "Stop Recording";
-        recordBtn.classList.add("active");
-        status.textContent    = "🎙️ Recording…";
-      });
-
-      function resetBtn() {
-        recordBtn.disabled    = false;
-        recordBtn.textContent = "Start Recording";
-        recordBtn.classList.remove("active");
-        isRecording = false;
-      }
-
-      clearBtn.addEventListener("click", () => {
-        output.innerHTML   = "Transcription will appear here…";
-        status.textContent = "✅ Model ready. Press record to start.";
-      });
-    </script>
-  </body>
-</html>
+    }
+</style>

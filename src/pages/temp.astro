@@ -1,0 +1,279 @@
+---
+---
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Seed Database</title>
+</head>
+<body>
+    <h1>Seed Lesson Data</h1>
+    <p>Make sure you are logged in as an Admin before clicking this!</p>
+    
+    <button id="seedBtn">Seed Database</button>
+    
+    <div id="status" style="margin-top: 20px; font-weight: bold;"></div>
+
+    <script>
+        // Make sure this matches where your backend is currently running
+        const API = 'https://sisa.lunaui.cc'; 
+        
+        const seedBtn = document.getElementById('seedBtn');
+        const statusEl = document.getElementById('status');
+
+        const lessonsData = [
+            {
+                "title": "Pointers and Addresses",
+                "explanation": "C is strictly pass-by-value, however if you want a reference, you can declare a variable as being a pointer to another variable’s address. Every variable has a memory address, since C needs to be able to store it somewhere. Pointers are specific versions of data types that reference “some value”. &var on a regular variable retrieves the variable’s address (referencing). *varptr on a pointer retrieves the value of the pointer’s targeted variable (dereferencing).",
+                "order_num": 1,
+                "questions": [
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "How do you retrieve the address of a regular variable?",
+                        "content": {
+                            "options": ["&var", "*var", "var&", "var*"],
+                            "correctAnswer": "&var"
+                        },
+                        "hint_prompt": "The student is trying to remember the referencing operator for a regular variable. Remind them of the symbol used to retrieve an address."
+                    },
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "What does the code `int *ptr = &foo` mean?",
+                        "content": {
+                            "options": [
+                                "There is some int value ptr, that we know is stored at the same location that our variable foo is",
+                                "The value of foo is duplicated into a new location for ptr",
+                                "ptr is a standard integer containing the value of foo",
+                                "foo becomes a pointer targeting ptr"
+                            ],
+                            "correctAnswer": "There is some int value ptr, that we know is stored at the same location that our variable foo is"
+                        },
+                        "hint_prompt": "The student is confused about what `*` and `&` represent in this assignment. Hint at how they mean 'stored at' and 'same location as'."
+                    },
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "Why does every variable have a memory address?",
+                        "content": {
+                            "options": [
+                                "C needs to be able to store it somewhere",
+                                "It is required for arrays to function",
+                                "It speeds up compilation time",
+                                "Because C is pass-by-reference by default"
+                            ],
+                            "correctAnswer": "C needs to be able to store it somewhere"
+                        },
+                        "hint_prompt": "The student needs to know why variables have memory addresses. Hint that data physically needs a place to live."
+                    },
+                    {
+                        "type": "drag_and_drop",
+                        "prompt": "Construct the syntax to create a pointer to an int named 'ptr'.",
+                        "content": {
+                            "blocks": ["int", "*ptr", ";", "float", "&ptr"],
+                            "correctSequence": ["int", "*ptr", ";"]
+                        },
+                        "hint_prompt": "The student is trying to declare an integer pointer. Nudge them to combine the int keyword with the pointer symbol."
+                    },
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "What does *varptr do when used on a pointer?",
+                        "content": {
+                            "options": [
+                                "Retrieves the value of the pointer’s targeted variable",
+                                "Retrieves the address of the pointer itself",
+                                "Deletes the targeted variable",
+                                "Creates a new pointer"
+                            ],
+                            "correctAnswer": "Retrieves the value of the pointer’s targeted variable"
+                        },
+                        "hint_prompt": "The student is trying to understand dereferencing. Remind them that it retrieves the value at the target."
+                    }
+                ]
+            },
+            {
+                "title": "Arrays",
+                "explanation": "An array is a fixed-size collection of variables all of the same type. The syntax `int foo[4] = {25, 50, 75, 100};` creates an array called `foo` that contains 4 integer numbers (int) in the order 25, 50, 75, 100. In practice, an array can be thought of as a pointer to the first element in said array, where every other value is stored immediately after in memory. To get an arbitrary element, you can use the ugly option like `*(foo + 3)` or the nice one like `foo[3]` to get the 4th element. It’s very possible to go passed the bounds of an array, this is called a memory leak and you should avoid letting this be possible in your code for a safe program.",
+                "order_num": 2,
+                "questions": [
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "What defines an array in C?",
+                        "content": {
+                            "options": [
+                                "A fixed-size collection of variables all of the same type",
+                                "A dynamically sized collection of mixed variables",
+                                "A block of memory used to store a single integer",
+                                "A pointer without a targeted variable"
+                            ],
+                            "correctAnswer": "A fixed-size collection of variables all of the same type"
+                        },
+                        "hint_prompt": "The student needs the definition of an array. Remind them about fixed sizes and matching variable types."
+                    },
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "How are elements of an array structured in memory?",
+                        "content": {
+                            "options": [
+                                "An array acts as a pointer to the first element, where every other value is stored immediately after",
+                                "Every element is stored in a random location in the heap",
+                                "They are stored backwards starting from the final pointer",
+                                "An array creates a separate pointer for every single element"
+                            ],
+                            "correctAnswer": "An array acts as a pointer to the first element, where every other value is stored immediately after"
+                        },
+                        "hint_prompt": "The student is unsure about array memory layout. Hint that the array acts as a pointer to the start, and the rest follow immediately."
+                    },
+                    {
+                        "type": "drag_and_drop",
+                        "prompt": "Select the 'nice' way to access the 4th element of the array 'foo'.",
+                        "content": {
+                            "blocks": ["foo", "[", "3", "]", "4", "(", ")"],
+                            "correctSequence": ["foo", "[", "3", "]"]
+                        },
+                        "hint_prompt": "The student is trying to access the 4th element using brackets. Remind them that arrays are zero-indexed."
+                    },
+                    {
+                        "type": "drag_and_drop",
+                        "prompt": "Select the 'ugly' way to access the 4th element of the array 'foo'.",
+                        "content": {
+                            "blocks": ["*", "(", "foo", "+", "3", ")", "4", "&"],
+                            "correctSequence": ["*", "(", "foo", "+", "3", ")"]
+                        },
+                        "hint_prompt": "The student is trying to use pointer arithmetic to access the 4th element. Nudge them to add 3 to the base pointer and dereference it."
+                    },
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "What happens if you go passed the bounds of an array?",
+                        "content": {
+                            "options": [
+                                "It causes a memory leak",
+                                "The program safely prevents execution",
+                                "The array dynamically expands to fit the bounds",
+                                "It automatically returns the first element"
+                            ],
+                            "correctAnswer": "It causes a memory leak"
+                        },
+                        "hint_prompt": "The student is asking about out-of-bounds arrays. Nudge them toward the concept that breaks a safe program."
+                    }
+                ]
+            },
+            {
+                "title": "Memory Management",
+                "explanation": "malloc() allocates a block of memory in the program heap and returns a pointer to the start of the block. sizeof() gets the size in bytes of a given data type. You can allocate memory for 4 integer values using `malloc(sizeof(int) * 4)`. In C, you have to free memory manually for all variables. free() takes in a pointer to a block of memory and frees it. Whenever you use free(), you have to be ABSOLUTELY sure that memory’s never going to be used again, because referring to freed memory causes errors.",
+                "order_num": 3,
+                "questions": [
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "What is the primary purpose of the `malloc()` function?",
+                        "content": {
+                            "options": [
+                                "It allocates a block of memory in the program heap",
+                                "It frees memory that is no longer in use",
+                                "It gets the size in bytes of a given data type",
+                                "It creates a struct"
+                            ],
+                            "correctAnswer": "It allocates a block of memory in the program heap"
+                        },
+                        "hint_prompt": "The student is asking about malloc. Remind them that it stands for memory allocation."
+                    },
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "What does `malloc()` return when executed?",
+                        "content": {
+                            "options": [
+                                "A pointer to the start of the block",
+                                "The total size of the block in bytes",
+                                "A newly initialized array",
+                                "A boolean indicating success"
+                            ],
+                            "correctAnswer": "A pointer to the start of the block"
+                        },
+                        "hint_prompt": "The student doesn't know what malloc returns. Ask them how they would physically access the memory block they just created."
+                    },
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "Which function gets the size in bytes of a given data type?",
+                        "content": {
+                            "options": ["sizeof()", "length()", "size()", "malloc()"],
+                            "correctAnswer": "sizeof()"
+                        },
+                        "hint_prompt": "The student needs the function that gets byte sizes. Point them toward the function named after checking the 'size of' something."
+                    },
+                    {
+                        "type": "drag_and_drop",
+                        "prompt": "Allocate memory for 4 integer values.",
+                        "content": {
+                            "blocks": ["malloc", "(", "sizeof(int)", "*", "4", ")", "free"],
+                            "correctSequence": ["malloc", "(", "sizeof(int)", "*", "4", ")"]
+                        },
+                        "hint_prompt": "The student is trying to allocate space for 4 ints. Guide them to multiply the size of an int by 4 inside the allocation function."
+                    },
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "Why must you be absolutely sure memory is never going to be used again before using `free()`?",
+                        "content": {
+                            "options": [
+                                "Referring to freed memory causes errors",
+                                "The memory is instantly reassigned to the operating system",
+                                "It forces the program to shut down",
+                                "It deletes the data type permanently"
+                            ],
+                            "correctAnswer": "Referring to freed memory causes errors"
+                        },
+                        "hint_prompt": "The student is asking about the dangers of free(). Warn them about what happens to the program if they try to access it later."
+                    }
+                ]
+            }
+        ];
+
+        seedBtn.addEventListener('click', async () => {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
+
+            if (!token) {
+                statusEl.textContent = 'Error: You are not logged in. No token found.';
+                statusEl.style.color = 'red';
+                return;
+            }
+
+            if (role !== 'admin') {
+                statusEl.textContent = 'Error: You must be an admin to seed the database.';
+                statusEl.style.color = 'red';
+                return;
+            }
+
+            try {
+                seedBtn.disabled = true;
+                statusEl.textContent = 'Seeding database... please wait.';
+                statusEl.style.color = 'blue';
+
+                const res = await fetch(`${API}/api/v1/admin/seed-lessons`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // Passing the token here
+                    },
+                    body: JSON.stringify(lessonsData)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    statusEl.textContent = `Success: ${data.message}`;
+                    statusEl.style.color = 'green';
+                } else {
+                    statusEl.textContent = `Server Error: ${data.message}`;
+                    statusEl.style.color = 'red';
+                }
+
+            } catch (err) {
+                console.error(err);
+                statusEl.textContent = 'Network Error: Could not reach the server.';
+                statusEl.style.color = 'red';
+            } finally {
+                seedBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

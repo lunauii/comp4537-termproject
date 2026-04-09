@@ -67,6 +67,7 @@ import "../css/style.css"
                 `;
             } else if (role === 'admin') {
                 nav.innerHTML = `
+                    <a href="/lessons">lessons</a>
                     <a href="/dashboard">dashboard</a>
                     <a href="/admin">admin</a>
                     <a href="/hint">hint tool</a>
@@ -74,6 +75,7 @@ import "../css/style.css"
                 `;
             } else {
                 nav.innerHTML = `
+                    <a href="/lessons">lessons</a>
                     <a href="/dashboard">dashboard</a>
                     <a href="/hint">hint tool</a>
                     <button onclick="window.logout()">logout</button>
